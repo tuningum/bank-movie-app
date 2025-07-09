@@ -1,125 +1,96 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
-void main() => runApp(TouchScenarioApp());
+void main() => runApp(const MyApp());
 
-class TouchScenarioApp extends StatelessWidget {
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: ScenarioScreen(),
+      title: 'Video Sequence App',
+      home: VideoSequencePage(),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
-class ScenarioScreen extends StatefulWidget {
+class VideoSequencePage extends StatefulWidget {
   @override
-  State<ScenarioScreen> createState() => _ScenarioScreenState();
+  State<VideoSequencePage> createState() => _VideoSequencePageState();
 }
 
-class _ScenarioScreenState extends State<ScenarioScreen> {
-  int currentStep = 0;
-  VideoPlayerController? _videoController;
-  bool _isVideoReady = false;
-
-  // 시나리오별 타입/파일명 정의
-  final List<Map<String, String>> steps = [
-    {'type': 'video', 'file': 'assets/video1.mov'},
-    {'type': 'video', 'file': 'assets/video2.mov'},
-    {'type': 'image', 'file': 'assets/image1.png'},
-    {'type': 'image', 'file': 'assets/image2.png'},
-    {'type': 'image', 'file': 'assets/image3.png'},
-    {'type': 'image', 'file': 'assets/image4.png'},
-    {'type': 'image', 'file': 'assets/image5.png'},
-    {'type': 'image', 'file': 'assets/image6.png'},
-    {'type': 'video', 'file': 'assets/video3.mov'},
-    {'type': 'image', 'file': 'assets/image7.png'},
+class _VideoSequencePageState extends State<VideoSequencePage> {
+  final List<String> videoPaths = [
+    'assets/videos/video1.mov',
+    'assets/videos/video2.mov',
+    'assets/videos/video3.mov',
+    'assets/videos/video4.mov',
+    'assets/videos/video5.mov',
+    'assets/videos/video6.mov',
+    'assets/videos/video7.mov',
+    'assets/videos/video8.mov',
+    'assets/videos/video9.mp4',
   ];
+  int currentIndex = 0;
+  VideoPlayerController? _controller;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _prepareCurrentStep();
+    _loadVideo();
   }
 
-  void _prepareCurrentStep() async {
-    if (_videoController != null) {
-      await _videoController?.pause();
-      await _videoController?.dispose();
-      _videoController = null;
-    }
+  Future<void> _loadVideo() async {
+    _controller?.dispose();
+    _controller = VideoPlayerController.asset(videoPaths[currentIndex]);
+    await _controller!.initialize();
     setState(() {
-      _isVideoReady = false;
+      _isInitialized = true;
     });
-
-    if (steps[currentStep]['type'] == 'video') {
-      _videoController = VideoPlayerController.asset(steps[currentStep]['file']!)
-        ..initialize().then((_) {
-          setState(() {
-            _isVideoReady = true;
-          });
-          _videoController?.play();
-          // 영상3에서만 자동 전환
-          if (currentStep == 8) {
-            _videoController?.addListener(() {
-              if (_videoController!.value.position >= _videoController!.value.duration) {
-                if (mounted && currentStep == 8) {
-                  setState(() {
-                    currentStep++;
-                  });
-                  _prepareCurrentStep();
-                }
-              }
-            });
-          }
-        });
-    }
+    _controller!.play();
+    _controller!.setLooping(false);
   }
 
-  void _onTap() {
-    // 영상3(9번째)만 자동 전환, 나머지는 터치로 다음 단계
-    if (currentStep == 8) return;
-    if (currentStep < steps.length - 1) {
+  Future<void> _nextVideo() async {
+    if (currentIndex < videoPaths.length - 1) {
       setState(() {
-        currentStep++;
+        _isInitialized = false;
+        currentIndex++;
       });
-      _prepareCurrentStep();
+      await _loadVideo();
     }
+    // 마지막 영상이면 아무 동작 없음
   }
 
   @override
   void dispose() {
-    _videoController?.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final step = steps[currentStep];
-    return GestureDetector(
-      onTap: _onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Scaffold(
-        body: step['type'] == 'video'
-            ? (_isVideoReady
-                ? Center(
-                    child: FittedBox(
-                      fit: BoxFit.cover,
-                      child: SizedBox(
-                        width: _videoController!.value.size.width,
-                        height: _videoController!.value.size.height,
-                        child: VideoPlayer(_videoController!),
-                      ),
-                    ),
-                  )
-                : Center(child: CircularProgressIndicator()))
-            : Image.asset(
-                step['file']!,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: double.infinity,
-              ),
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () async {
+          if (_controller != null && _controller!.value.isInitialized) {
+            await _controller!.pause();
+            await _nextVideo();
+          }
+        },
+        child: Center(
+          child: _isInitialized && _controller != null
+              ? AspectRatio(
+                  aspectRatio: _controller!.value.aspectRatio,
+                  child: VideoPlayer(_controller!),
+                )
+              : const CircularProgressIndicator(),
+        ),
       ),
     );
   }

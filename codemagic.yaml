@@ -1,0 +1,21 @@
+workflows:
+  ios-release-build:
+    name: iOS Release Build
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        BUNDLE_ID: "com.example.bankvideoapp" # ← 본인 프로젝트에 맞게 수정!
+    scripts:
+      - name: Flutter Pub Get
+        script: flutter pub get
+      - name: Flutter Build IPA (Release)
+        script: flutter build ipa --release --no-codesign
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      email:
+        recipients:
+          - "tjdrhd5154@gmail.com" # ← 빌드 결과 받을 이메일
