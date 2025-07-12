@@ -29,8 +29,8 @@ class _VideoCropFullSequenceState extends State<VideoCropFullSequence> {
   // 실제 영상 해상도(아이폰 12 Pro 기준)
   final int videoWidth = 1170;
   final int videoHeight = 2532;
-  final int cropTop = 80;    // 위 80px
-  final int cropBottom = 80; // 아래 80px
+  final int cropTop = 100;    // 위 100px
+  final int cropBottom = 100; // 아래 100px
 
   late VideoPlayerController _controller;
   int currentIndex = 0;
