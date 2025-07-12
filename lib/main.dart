@@ -24,20 +24,20 @@ class VideoSequencePage extends StatefulWidget {
   State<VideoSequencePage> createState() => _VideoSequencePageState();
 }
 
-class _VideoSequencePageState extends State<VideoSequencePage>
-    with SingleTickerProviderStateMixin {
+class _VideoSequencePageState extends State<VideoSequencePage> {
   final List<String> videoList = List.generate(
-      9, (i) => 'assets/video${i + 1}.MOV'); // 9개의 MOV 영상 자동 등록
-
+    9,
+    (i) => 'assets/videos/video${i + 1}.MOV',
+  );
   late VideoPlayerController _controller;
   int currentIndex = 0;
   bool _isTransitioning = false;
   double _opacity = 1.0;
 
-  // 실제 MOV 영상 해상도 (예시: 1170x2532)
+  // 영상 해상도: 아이폰12Pro 기준 (직접 측정해서 맞추세요!)
   final int videoWidth = 1170;
   final int videoHeight = 2532;
-  final int cropY = 46;
+  final int cropY = 46; // 위아래 46px crop
 
   @override
   void initState() {
@@ -47,17 +47,21 @@ class _VideoSequencePageState extends State<VideoSequencePage>
 
   Future<void> _initVideo(String path) async {
     _controller = VideoPlayerController.asset(path);
-    await _controller.initialize();
-    setState(() {});
-    _controller.play();
-    _controller.setLooping(false);
+    try {
+      await _controller.initialize();
+      setState(() {});
+      _controller.play();
+      _controller.setLooping(false);
+    } catch (e) {
+      setState(() {}); // 에러 발생시 화면에도 반영
+    }
   }
 
   Future<void> _nextVideo() async {
     if (currentIndex < videoList.length - 1 && !_isTransitioning) {
       _isTransitioning = true;
       setState(() {
-        _opacity = 0.0; // Fade-out
+        _opacity = 0.0; // Fade out
       });
       await Future.delayed(const Duration(milliseconds: 220));
       await _controller.pause();
@@ -65,7 +69,7 @@ class _VideoSequencePageState extends State<VideoSequencePage>
       currentIndex++;
       await _initVideo(videoList[currentIndex]);
       setState(() {
-        _opacity = 1.0; // Fade-in
+        _opacity = 1.0; // Fade in
       });
       await Future.delayed(const Duration(milliseconds: 180));
       _isTransitioning = false;
@@ -79,6 +83,14 @@ class _VideoSequencePageState extends State<VideoSequencePage>
   }
 
   Widget _croppedVideo() {
+    if (_controller.value.hasError) {
+      return Center(
+        child: Text(
+          '에러: ${_controller.value.errorDescription}',
+          style: const TextStyle(color: Colors.red, fontSize: 18),
+        ),
+      );
+    }
     if (!_controller.value.isInitialized) {
       return const Center(child: CircularProgressIndicator());
     }
