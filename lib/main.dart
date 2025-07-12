@@ -34,10 +34,11 @@ class _VideoSequencePageState extends State<VideoSequencePage> {
   bool _isTransitioning = false;
   double _opacity = 1.0;
 
-  // 영상 해상도: 아이폰12Pro 기준 (직접 측정해서 맞추세요!)
-  final int videoWidth = 1170;
+  // 실제 영상 해상도
+  final int videoWidth = 1170;     // 아이폰12 Pro 기준
   final int videoHeight = 2532;
-  final int cropY = 46; // 위아래 46px crop
+  final int cropTop = 60;          // 위 60px
+  final int cropBottom = 30;       // 아래 30px
 
   @override
   void initState() {
@@ -53,7 +54,7 @@ class _VideoSequencePageState extends State<VideoSequencePage> {
       _controller.play();
       _controller.setLooping(false);
     } catch (e) {
-      setState(() {}); // 에러 발생시 화면에도 반영
+      setState(() {});
     }
   }
 
@@ -61,7 +62,7 @@ class _VideoSequencePageState extends State<VideoSequencePage> {
     if (currentIndex < videoList.length - 1 && !_isTransitioning) {
       _isTransitioning = true;
       setState(() {
-        _opacity = 0.0; // Fade out
+        _opacity = 0.0;
       });
       await Future.delayed(const Duration(milliseconds: 220));
       await _controller.pause();
@@ -69,7 +70,7 @@ class _VideoSequencePageState extends State<VideoSequencePage> {
       currentIndex++;
       await _initVideo(videoList[currentIndex]);
       setState(() {
-        _opacity = 1.0; // Fade in
+        _opacity = 1.0;
       });
       await Future.delayed(const Duration(milliseconds: 180));
       _isTransitioning = false;
@@ -95,16 +96,22 @@ class _VideoSequencePageState extends State<VideoSequencePage> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // Crop 효과 (위아래 46px씩 자르기)
+    // Crop 효과 (위 60px, 아래 30px)
+    final double heightFactor =
+        (videoHeight - cropTop - cropBottom) / videoHeight;
+
     return Center(
       child: ClipRect(
         child: Align(
           alignment: Alignment.topCenter,
-          heightFactor: (videoHeight - cropY * 2) / videoHeight,
-          child: SizedBox(
-            width: videoWidth.toDouble(),
-            height: (videoHeight - cropY * 2).toDouble(),
-            child: VideoPlayer(_controller),
+          heightFactor: heightFactor,
+          child: Padding(
+            padding: EdgeInsets.only(top: cropTop.toDouble()),
+            child: SizedBox(
+              width: videoWidth.toDouble(),
+              height: (videoHeight - cropTop - cropBottom).toDouble(),
+              child: VideoPlayer(_controller),
+            ),
           ),
         ),
       ),
