@@ -1,44 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: '우리WON뱅킹',
-      debugShowCheckedModeBanner: false,
-      home: const VideoSequencePage(),
-    );
-  }
+  Widget build(BuildContext context) => MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: '우리WON뱅킹',
+        home: const VideoCropFullSequence(),
+      );
 }
 
-class VideoSequencePage extends StatefulWidget {
-  const VideoSequencePage({super.key});
+class VideoCropFullSequence extends StatefulWidget {
+  const VideoCropFullSequence({super.key});
 
   @override
-  State<VideoSequencePage> createState() => _VideoSequencePageState();
+  State<VideoCropFullSequence> createState() => _VideoCropFullSequenceState();
 }
 
-class _VideoSequencePageState extends State<VideoSequencePage> {
+class _VideoCropFullSequenceState extends State<VideoCropFullSequence> {
   final List<String> videoList = List.generate(
     9,
     (i) => 'assets/videos/video${i + 1}.MOV',
   );
+
+  // 실제 영상 해상도
+  final int videoWidth = 1170;
+  final int videoHeight = 2532;
+  final int cropTop = 45;
+  final int cropBottom = 45;
+
   late VideoPlayerController _controller;
   int currentIndex = 0;
   bool _isTransitioning = false;
   double _opacity = 1.0;
-
-  // 실제 영상 해상도
-  final int videoWidth = 1170;     // 아이폰12 Pro 기준
-  final int videoHeight = 2532;
-  final int cropTop = 60;          // 위 60px
-  final int cropBottom = 30;       // 아래 30px
 
   @override
   void initState() {
@@ -64,7 +61,7 @@ class _VideoSequencePageState extends State<VideoSequencePage> {
       setState(() {
         _opacity = 0.0;
       });
-      await Future.delayed(const Duration(milliseconds: 220));
+      await Future.delayed(const Duration(milliseconds: 180));
       await _controller.pause();
       await _controller.dispose();
       currentIndex++;
@@ -72,7 +69,7 @@ class _VideoSequencePageState extends State<VideoSequencePage> {
       setState(() {
         _opacity = 1.0;
       });
-      await Future.delayed(const Duration(milliseconds: 180));
+      await Future.delayed(const Duration(milliseconds: 120));
       _isTransitioning = false;
     }
   }
@@ -96,22 +93,26 @@ class _VideoSequencePageState extends State<VideoSequencePage> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // Crop 효과 (위 60px, 아래 30px)
-    final double heightFactor =
-        (videoHeight - cropTop - cropBottom) / videoHeight;
+    final int visibleHeight = videoHeight - cropTop - cropBottom;
 
-    return Center(
-      child: ClipRect(
-        child: Align(
-          alignment: Alignment.topCenter,
-          heightFactor: heightFactor,
-          child: Padding(
-            padding: EdgeInsets.only(top: cropTop.toDouble()),
-            child: SizedBox(
-              width: videoWidth.toDouble(),
-              height: (videoHeight - cropTop - cropBottom).toDouble(),
-              child: VideoPlayer(_controller),
-            ),
+    return ClipRect(
+      child: FittedBox(
+        fit: BoxFit.cover,
+        child: SizedBox(
+          width: videoWidth.toDouble(),
+          height: visibleHeight.toDouble(),
+          child: Stack(
+            children: [
+              Positioned(
+                top: -cropTop.toDouble(),
+                left: 0,
+                child: SizedBox(
+                  width: videoWidth.toDouble(),
+                  height: videoHeight.toDouble(),
+                  child: VideoPlayer(_controller),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -122,15 +123,13 @@ class _VideoSequencePageState extends State<VideoSequencePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: SafeArea(
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: _nextVideo,
-          child: AnimatedOpacity(
-            opacity: _opacity,
-            duration: const Duration(milliseconds: 180),
-            child: _croppedVideo(),
-          ),
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _nextVideo,
+        child: AnimatedOpacity(
+          opacity: _opacity,
+          duration: const Duration(milliseconds: 120),
+          child: _croppedVideo(),
         ),
       ),
     );
