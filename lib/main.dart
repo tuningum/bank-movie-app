@@ -26,11 +26,11 @@ class _VideoCropFullSequenceState extends State<VideoCropFullSequence> {
     (i) => 'assets/videos/video${i + 1}.MOV',
   );
 
-  // 실제 영상 해상도
+  // 실제 영상 해상도(아이폰 12 Pro 기준)
   final int videoWidth = 1170;
   final int videoHeight = 2532;
-  final int cropTop = 45;
-  final int cropBottom = 45;
+  final int cropTop = 60;    // 위 60px
+  final int cropBottom = 60; // 아래 60px
 
   late VideoPlayerController _controller;
   int currentIndex = 0;
