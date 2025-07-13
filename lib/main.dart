@@ -8,136 +8,92 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: '우리WON뱅킹',
-        home: const VideoSegmentPlayer(),
+        home: const VideoOverlayApp(),
       );
 }
 
-class VideoSegmentPlayer extends StatefulWidget {
-  const VideoSegmentPlayer({super.key});
-
+class VideoOverlayApp extends StatefulWidget {
+  const VideoOverlayApp({super.key});
   @override
-  State<VideoSegmentPlayer> createState() => _VideoSegmentPlayerState();
+  State<VideoOverlayApp> createState() => _VideoOverlayAppState();
 }
 
-class _VideoSegmentPlayerState extends State<VideoSegmentPlayer> {
-  final String videoPath = 'assets/videos/all.mov';
-
-  // 요청하신 9개 구간(초)
-  final List<Map<String, double>> segments = [
-    {'start': 0.00,   'end': 3.70},
-    {'start': 3.70,   'end': 8.06},
-    {'start': 8.06,   'end': 8.40},
-    {'start': 9.80,   'end': 9.85},
-    {'start': 11.15,  'end': 11.20},
-    {'start': 12.38,  'end': 12.43},
-    {'start': 13.73,  'end': 13.78},
-    {'start': 15.35,  'end': 15.40},
-    {'start': 16.35,  'end': 26.80},
-  ];
-
+class _VideoOverlayAppState extends State<VideoOverlayApp> {
   late VideoPlayerController _controller;
-  int currentSegment = 0;
   bool isReady = false;
+  double currentSeconds = 0.0;
 
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.asset(videoPath)
+    _controller = VideoPlayerController.asset('assets/videos/all.mov')
       ..initialize().then((_) {
         setState(() => isReady = true);
-        _playCurrentSegment();
+        _controller.play();
       });
-    _controller.addListener(_onPositionUpdate);
-  }
-
-  void _onPositionUpdate() {
-    if (!isReady) return;
-    final now = _controller.value.position.inMilliseconds / 1000.0;
-    final end = segments[currentSegment]['end']!;
-    if (now >= end) {
-      _controller.pause();
-    }
-  }
-
-  Future<void> _playCurrentSegment() async {
-    final start = segments[currentSegment]['start']!;
-    await _controller.seekTo(Duration(milliseconds: (start * 1000).round()));
-    await _controller.play();
-  }
-
-  Future<void> _nextSegment() async {
-    if (currentSegment < segments.length - 1) {
-      setState(() => currentSegment++);
-      await _playCurrentSegment();
-    }
-  }
-
-  // 하단 컬러: 17초(16.35) 이상 구간만 특수색, 나머지는 하얀색
-  Color getBottomOverlayColor() {
-    if (segments[currentSegment]['start']! >= 17.0) {
-      return const Color(0xFFF5F3F6);
-    }
-    return Colors.white;
+    _controller.addListener(() {
+      setState(() {
+        currentSeconds = _controller.value.position.inMilliseconds / 1000.0;
+      });
+    });
   }
 
   @override
   void dispose() {
-    _controller.removeListener(_onPositionUpdate);
     _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // 상단/하단 오버레이 px 값 (이미지 기준)
+    const double topOverlayPx = 95;
+    const double bottomOverlayPx = 40;
+    // 예시 이미지 기준 전체 height (1662px)
+    const double baseHeight = 1662.0;
+    // 오버레이 색상
+    const overlayColor = Color(0xFFF4F4F7);
+
     return Scaffold(
       backgroundColor: Colors.black,
-      body: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: _nextSegment,
-        child: Center(
-          child: isReady
-              ? LayoutBuilder(
-                  builder: (context, constraints) {
-                    final double videoW = _controller.value.size.width;
-                    final double videoH = _controller.value.size.height;
-                    final double aspect = _controller.value.aspectRatio;
-
-                    final double showW = constraints.maxWidth;
-                    final double showH = showW / aspect;
-
-                    // 오버레이 높이(비율 변환)
-                    final double topOverlay = showH * 95 / videoH;
-                    final double bottomOverlay = showH * 40 / videoH;
-
-                    return Stack(
-                      children: [
-                        AspectRatio(
-                          aspectRatio: aspect,
-                          child: VideoPlayer(_controller),
-                        ),
-                        // 상단 오버레이(95px)
+      body: Center(
+        child: isReady
+            ? LayoutBuilder(
+                builder: (context, constraints) {
+                  final videoWidth = constraints.maxWidth;
+                  final videoHeight = constraints.maxHeight;
+                  final topOverlay = videoHeight * (topOverlayPx / baseHeight);
+                  final bottomOverlay = videoHeight * (bottomOverlayPx / baseHeight);
+                  return Stack(
+                    children: [
+                      AspectRatio(
+                        aspectRatio: _controller.value.aspectRatio,
+                        child: VideoPlayer(_controller),
+                      ),
+                      // 17초 이후에만 오버레이 표시
+                      if (currentSeconds >= 17.0) ...[
+                        // 상단 오버레이
                         Positioned(
                           left: 0,
-                          right: 0,
                           top: 0,
+                          right: 0,
                           height: topOverlay,
-                          child: Container(color: Colors.white),
+                          child: Container(color: overlayColor),
                         ),
-                        // 하단 오버레이(40px)
+                        // 하단 오버레이
                         Positioned(
                           left: 0,
-                          right: 0,
                           bottom: 0,
+                          right: 0,
                           height: bottomOverlay,
-                          child: Container(color: getBottomOverlayColor()),
+                          child: Container(color: overlayColor),
                         ),
-                      ],
-                    );
-                  },
-                )
-              : const CircularProgressIndicator(),
-        ),
+                      ]
+                    ],
+                  );
+                },
+              )
+            : const CircularProgressIndicator(),
       ),
     );
   }
