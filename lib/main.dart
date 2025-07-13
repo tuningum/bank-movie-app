@@ -23,7 +23,6 @@ class VideoSegmentPlayer extends StatefulWidget {
 class _VideoSegmentPlayerState extends State<VideoSegmentPlayer> {
   final String videoPath = 'assets/videos/all.mov';
 
-  // 보여줄 구간 정보(초 단위, 터치마다 진행)
   final List<Map<String, double>> segments = [
     {'start': 0.00,  'end': 7.16},
     {'start': 7.16,  'end': 9.19},
@@ -54,7 +53,6 @@ class _VideoSegmentPlayerState extends State<VideoSegmentPlayer> {
     if (!isReady) return;
     final now = _controller.value.position.inMilliseconds / 1000.0;
     final end = segments[currentSegment]['end']!;
-    // 구간 끝나면 자동 pause
     if (now >= end) {
       _controller.pause();
     }
@@ -89,9 +87,44 @@ class _VideoSegmentPlayerState extends State<VideoSegmentPlayer> {
         onTap: _nextSegment,
         child: Center(
           child: isReady
-              ? AspectRatio(
-                  aspectRatio: _controller.value.aspectRatio,
-                  child: VideoPlayer(_controller),
+              ? LayoutBuilder(
+                  builder: (context, constraints) {
+                    final double videoW = _controller.value.size.width;
+                    final double videoH = _controller.value.size.height;
+                    final double aspect = _controller.value.aspectRatio;
+
+                    final double showW = constraints.maxWidth;
+                    final double showH = showW / aspect;
+
+                    // 오버레이 높이를 비율로 변환
+                    final double topOverlay = showH * 40 / videoH;
+                    final double bottomOverlay = showH * 30 / videoH;
+
+                    return Stack(
+                      children: [
+                        AspectRatio(
+                          aspectRatio: aspect,
+                          child: VideoPlayer(_controller),
+                        ),
+                        // 상단 오버레이(40px)
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          top: 0,
+                          height: topOverlay,
+                          child: Container(color: Colors.white),
+                        ),
+                        // 하단 오버레이(30px)
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          height: bottomOverlay,
+                          child: Container(color: Colors.white),
+                        ),
+                      ],
+                    );
+                  },
                 )
               : const CircularProgressIndicator(),
         ),
