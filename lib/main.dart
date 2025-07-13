@@ -23,15 +23,17 @@ class VideoSegmentPlayer extends StatefulWidget {
 class _VideoSegmentPlayerState extends State<VideoSegmentPlayer> {
   final String videoPath = 'assets/videos/all.mov';
 
+  // 요청하신 9개 구간(초)
   final List<Map<String, double>> segments = [
-    {'start': 0.00,  'end': 7.16},
-    {'start': 7.16,  'end': 9.19},
-    {'start': 9.24,  'end': 10.03},
+    {'start': 0.00,  'end': 3.19},
+    {'start': 3.19,  'end': 7.25},
+    {'start': 7.25,  'end': 8.13},
+    {'start': 9.19,  'end': 9.28},
     {'start': 11.04, 'end': 11.09},
     {'start': 12.10, 'end': 12.15},
-    {'start': 13.21, 'end': 13.25},
+    {'start': 13.15, 'end': 13.25},
     {'start': 15.10, 'end': 15.15},
-    {'start': 16.07, 'end': 26.22},
+    {'start': 16.11, 'end': 26.11},
   ];
 
   late VideoPlayerController _controller;
@@ -96,9 +98,8 @@ class _VideoSegmentPlayerState extends State<VideoSegmentPlayer> {
                     final double showW = constraints.maxWidth;
                     final double showH = showW / aspect;
 
-                    // 오버레이 높이를 비율로 변환
-                    final double topOverlay = showH * 40 / videoH;
-                    final double bottomOverlay = showH * 30 / videoH;
+                    // 상단 오버레이 높이(비율 변환)
+                    final double topOverlay = showH * 95 / videoH;
 
                     return Stack(
                       children: [
@@ -106,20 +107,12 @@ class _VideoSegmentPlayerState extends State<VideoSegmentPlayer> {
                           aspectRatio: aspect,
                           child: VideoPlayer(_controller),
                         ),
-                        // 상단 오버레이(40px)
+                        // 상단 오버레이(95px)
                         Positioned(
                           left: 0,
                           right: 0,
                           top: 0,
                           height: topOverlay,
-                          child: Container(color: Colors.white),
-                        ),
-                        // 하단 오버레이(30px)
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          height: bottomOverlay,
                           child: Container(color: Colors.white),
                         ),
                       ],
