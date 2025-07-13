@@ -26,13 +26,14 @@ class _VideoCropFullSequenceState extends State<VideoCropFullSequence> {
     (i) => 'assets/videos/video${i + 1}.MOV',
   );
 
-  // 실제 영상 해상도(아이폰 12 Pro 기준)
+  // 영상 해상도 (아이폰 12 Pro 예시)
   final int videoWidth = 1170;
   final int videoHeight = 2532;
-  final int cropTop = 95;    // 상단 95px
-  final int cropBottom = 30; // 하단 30px
+  final int cropTop = 92;    // 상단 92px
+  final int cropBottom = 33; // 하단 33px
 
   late VideoPlayerController _controller;
+  late VideoPlayerController? _nextController; // 다음 영상 컨트롤러 (전환 부드럽게)
   int currentIndex = 0;
   bool _isTransitioning = false;
   double _opacity = 1.0;
@@ -40,6 +41,7 @@ class _VideoCropFullSequenceState extends State<VideoCropFullSequence> {
   @override
   void initState() {
     super.initState();
+    _nextController = null;
     _initVideo(videoList[currentIndex]);
   }
 
@@ -55,21 +57,37 @@ class _VideoCropFullSequenceState extends State<VideoCropFullSequence> {
     }
   }
 
+  // 다음 영상 미리 준비, 준비되면 부드럽게 전환
   Future<void> _nextVideo() async {
     if (currentIndex < videoList.length - 1 && !_isTransitioning) {
       _isTransitioning = true;
-      setState(() {
-        _opacity = 0.0;
-      });
-      await Future.delayed(const Duration(milliseconds: 180));
-      await _controller.pause();
-      await _controller.dispose();
-      currentIndex++;
-      await _initVideo(videoList[currentIndex]);
-      setState(() {
-        _opacity = 1.0;
-      });
-      await Future.delayed(const Duration(milliseconds: 120));
+
+      // 다음 영상 미리 초기화
+      final nextIndex = currentIndex + 1;
+      _nextController = VideoPlayerController.asset(videoList[nextIndex]);
+      try {
+        await _nextController!.initialize();
+        _nextController!.play();
+        _nextController!.setLooping(false);
+
+        // 전환 애니메이션 (투명도 사용, 하지만 이전 화면은 그대로!)
+        setState(() {
+          _opacity = 0.0;
+        });
+        await Future.delayed(const Duration(milliseconds: 80));
+        await _controller.pause();
+        await _controller.dispose();
+        _controller = _nextController!;
+        currentIndex = nextIndex;
+        _nextController = null;
+        setState(() {
+          _opacity = 1.0;
+        });
+        await Future.delayed(const Duration(milliseconds: 80));
+      } catch (e) {
+        // 에러시 무시하고 복구
+        setState(() {});
+      }
       _isTransitioning = false;
     }
   }
@@ -77,19 +95,20 @@ class _VideoCropFullSequenceState extends State<VideoCropFullSequence> {
   @override
   void dispose() {
     _controller.dispose();
+    _nextController?.dispose();
     super.dispose();
   }
 
-  Widget _croppedVideo() {
-    if (_controller.value.hasError) {
+  Widget _croppedVideo(VideoPlayerController controller) {
+    if (controller.value.hasError) {
       return Center(
         child: Text(
-          '에러: ${_controller.value.errorDescription}',
+          '에러: ${controller.value.errorDescription}',
           style: const TextStyle(color: Colors.red, fontSize: 18),
         ),
       );
     }
-    if (!_controller.value.isInitialized) {
+    if (!controller.value.isInitialized) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -109,7 +128,7 @@ class _VideoCropFullSequenceState extends State<VideoCropFullSequence> {
                 child: SizedBox(
                   width: videoWidth.toDouble(),
                   height: videoHeight.toDouble(),
-                  child: VideoPlayer(_controller),
+                  child: VideoPlayer(controller),
                 ),
               ),
             ],
@@ -128,8 +147,8 @@ class _VideoCropFullSequenceState extends State<VideoCropFullSequence> {
         onTap: _nextVideo,
         child: AnimatedOpacity(
           opacity: _opacity,
-          duration: const Duration(milliseconds: 120),
-          child: _croppedVideo(),
+          duration: const Duration(milliseconds: 100),
+          child: _croppedVideo(_controller),
         ),
       ),
     );
