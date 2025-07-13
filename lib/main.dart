@@ -23,7 +23,7 @@ class VideoSegmentPlayer extends StatefulWidget {
 class _VideoSegmentPlayerState extends State<VideoSegmentPlayer> {
   final String videoPath = 'assets/videos/all.mov';
 
-  // 보여줄 구간 정보(초)
+  // 보여줄 구간 정보(초 단위, 터치마다 진행)
   final List<Map<String, double>> segments = [
     {'start': 0.00,  'end': 7.16},
     {'start': 7.16,  'end': 9.19},
@@ -54,7 +54,7 @@ class _VideoSegmentPlayerState extends State<VideoSegmentPlayer> {
     if (!isReady) return;
     final now = _controller.value.position.inMilliseconds / 1000.0;
     final end = segments[currentSegment]['end']!;
-    // 구간이 끝나면 자동 pause
+    // 구간 끝나면 자동 pause
     if (now >= end) {
       _controller.pause();
     }
