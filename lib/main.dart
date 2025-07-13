@@ -9,18 +9,18 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
         debugShowCheckedModeBanner: false,
         title: '우리WON뱅킹',
-        home: const VideoCropAllWhite(),
+        home: const VideoCropCustomSides(),
       );
 }
 
-class VideoCropAllWhite extends StatefulWidget {
-  const VideoCropAllWhite({super.key});
+class VideoCropCustomSides extends StatefulWidget {
+  const VideoCropCustomSides({super.key});
 
   @override
-  State<VideoCropAllWhite> createState() => _VideoCropAllWhiteState();
+  State<VideoCropCustomSides> createState() => _VideoCropCustomSidesState();
 }
 
-class _VideoCropAllWhiteState extends State<VideoCropAllWhite> {
+class _VideoCropCustomSidesState extends State<VideoCropCustomSides> {
   final int videoWidth = 1170;
   final int videoHeight = 2532;
   final int cropTop = 95;
@@ -78,9 +78,25 @@ class _VideoCropAllWhiteState extends State<VideoCropAllWhite> {
     super.dispose();
   }
 
-  // video9만 상하단 회색(#F5F6FA), 그 외는 하얀색
-  Color get sideColor =>
-      (currentIndex == 8) ? const Color(0xFFF5F6FA) : Colors.white;
+  // video9 → 상하단 #F5F6FA, video2 하단 #F5F3F6, 나머지 하얀색
+  Color getTopColor() {
+    if (currentIndex == 8) {
+      // video9
+      return const Color(0xFFF5F6FA);
+    }
+    return Colors.white;
+  }
+
+  Color getBottomColor() {
+    if (currentIndex == 8) {
+      // video9
+      return const Color(0xFFF5F6FA);
+    } else if (currentIndex == 1) {
+      // video2 (인덱스 1)
+      return const Color(0xFFF5F3F6);
+    }
+    return Colors.white;
+  }
 
   Widget _croppedVideo(BuildContext context) {
     if (!_controller.value.isInitialized) {
@@ -104,21 +120,21 @@ class _VideoCropAllWhiteState extends State<VideoCropAllWhite> {
         }
         return Stack(
           children: [
-            // 상단 패딩(화이트/그레이)
+            // 상단 배경
             Positioned(
               top: 0,
               left: 0,
               right: 0,
               height: cropTop * viewHeight / visibleHeight,
-              child: Container(color: sideColor),
+              child: Container(color: getTopColor()),
             ),
-            // 하단 패딩(화이트/그레이)
+            // 하단 배경
             Positioned(
               bottom: 0,
               left: 0,
               right: 0,
               height: cropBottom * viewHeight / visibleHeight,
-              child: Container(color: sideColor),
+              child: Container(color: getBottomColor()),
             ),
             // crop된 비디오
             Positioned(
