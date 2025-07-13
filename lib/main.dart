@@ -9,22 +9,22 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
         debugShowCheckedModeBanner: false,
         title: '우리WON뱅킹',
-        home: const VideoCropCustomTopColor(),
+        home: const VideoCropAllWhite(),
       );
 }
 
-class VideoCropCustomTopColor extends StatefulWidget {
-  const VideoCropCustomTopColor({super.key});
+class VideoCropAllWhite extends StatefulWidget {
+  const VideoCropAllWhite({super.key});
 
   @override
-  State<VideoCropCustomTopColor> createState() => _VideoCropCustomTopColorState();
+  State<VideoCropAllWhite> createState() => _VideoCropAllWhiteState();
 }
 
-class _VideoCropCustomTopColorState extends State<VideoCropCustomTopColor> {
+class _VideoCropAllWhiteState extends State<VideoCropAllWhite> {
   final int videoWidth = 1170;
   final int videoHeight = 2532;
-  final int cropTop = 95;     // 상단 95px (색상채움)
-  final int cropBottom = 40;  // 하단 40px (crop)
+  final int cropTop = 95;
+  final int cropBottom = 40;
 
   final List<String> videoList = List.generate(
     9,
@@ -55,13 +55,12 @@ class _VideoCropCustomTopColorState extends State<VideoCropCustomTopColor> {
       _isTransitioning = true;
       final nextIndex = currentIndex + 1;
 
-      // 다음 영상 미리 초기화 (이전 영상 계속 보여주기)
+      // 다음 영상 미리 준비
       _nextController = VideoPlayerController.asset(videoList[nextIndex]);
       await _nextController!.initialize();
       _nextController!.play();
       _nextController!.setLooping(false);
 
-      // 컨트롤러 바꿔치기 (빈화면 없음)
       await _controller.pause();
       await _controller.dispose();
       _controller = _nextController!;
@@ -79,8 +78,8 @@ class _VideoCropCustomTopColorState extends State<VideoCropCustomTopColor> {
     super.dispose();
   }
 
-  // 상단 배경색 결정 함수
-  Color get topColor =>
+  // video9만 상하단 회색(#F5F6FA), 그 외는 하얀색
+  Color get sideColor =>
       (currentIndex == 8) ? const Color(0xFFF5F6FA) : Colors.white;
 
   Widget _croppedVideo(BuildContext context) {
@@ -97,23 +96,29 @@ class _VideoCropCustomTopColorState extends State<VideoCropCustomTopColor> {
         final double widgetAspect = maxWidth / maxHeight;
         double viewWidth, viewHeight;
         if (widgetAspect > croppedAspect) {
-          // 화면이 더 넓은 경우: 높이를 기준
           viewHeight = maxHeight;
           viewWidth = viewHeight * croppedAspect;
         } else {
-          // 화면이 더 긴 경우: 폭을 기준
           viewWidth = maxWidth;
           viewHeight = viewWidth / croppedAspect;
         }
         return Stack(
           children: [
-            // 상단 배경
+            // 상단 패딩(화이트/그레이)
             Positioned(
               top: 0,
               left: 0,
               right: 0,
               height: cropTop * viewHeight / visibleHeight,
-              child: Container(color: topColor),
+              child: Container(color: sideColor),
+            ),
+            // 하단 패딩(화이트/그레이)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: cropBottom * viewHeight / visibleHeight,
+              child: Container(color: sideColor),
             ),
             // crop된 비디오
             Positioned(
