@@ -54,13 +54,11 @@ class _VideoCropWhiteTopState extends State<VideoCropWhiteTop> {
     if (currentIndex < videoList.length - 1 && !_isTransitioning) {
       _isTransitioning = true;
       final nextIndex = currentIndex + 1;
-      // 다음 영상 미리 초기화
       _nextController = VideoPlayerController.asset(videoList[nextIndex]);
       await _nextController!.initialize();
       _nextController!.play();
       _nextController!.setLooping(false);
 
-      // 이전 컨트롤러는 화면에 계속 보여줌
       await _controller.pause();
       await _controller.dispose();
       _controller = _nextController!;
@@ -78,45 +76,57 @@ class _VideoCropWhiteTopState extends State<VideoCropWhiteTop> {
     super.dispose();
   }
 
-  Widget _croppedVideo() {
+  Widget _croppedVideo(BuildContext context) {
     if (!_controller.value.isInitialized) {
       return const Center(child: CircularProgressIndicator());
     }
     final int visibleHeight = videoHeight - cropTop - cropBottom;
     final double croppedAspect = videoWidth / visibleHeight;
 
-    return AspectRatio(
-      aspectRatio: croppedAspect,
-      child: Stack(
-        children: [
-          // 상단 패딩(화이트)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: cropTop.toDouble(),
-            child: Container(color: Colors.white),
-          ),
-          // crop된 비디오
-          Positioned(
-            top: cropTop.toDouble(),
-            left: 0,
-            right: 0,
-            height: visibleHeight.toDouble(),
-            child: ClipRect(
-              child: FittedBox(
-                fit: BoxFit.cover,
-                child: SizedBox(
-                  width: videoWidth.toDouble(),
-                  height: visibleHeight.toDouble(),
+    // 화면에 맞춰, 확대 없이 crop된 부분만 비율대로 표시
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double maxWidth = constraints.maxWidth;
+        final double maxHeight = constraints.maxHeight;
+        final double widgetAspect = maxWidth / maxHeight;
+        double viewWidth, viewHeight;
+        if (widgetAspect > croppedAspect) {
+          // 화면이 더 넓은 경우: 높이를 기준
+          viewHeight = maxHeight;
+          viewWidth = viewHeight * croppedAspect;
+        } else {
+          // 화면이 더 긴 경우: 폭을 기준
+          viewWidth = maxWidth;
+          viewHeight = viewWidth / croppedAspect;
+        }
+        return Stack(
+          children: [
+            // 상단 패딩(화이트)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: cropTop * viewHeight / visibleHeight,
+              child: Container(color: Colors.white),
+            ),
+            // crop된 비디오
+            Positioned(
+              top: cropTop * viewHeight / visibleHeight,
+              left: (maxWidth - viewWidth) / 2,
+              width: viewWidth,
+              height: viewHeight,
+              child: ClipRect(
+                child: OverflowBox(
+                  maxWidth: viewWidth,
+                  maxHeight: viewHeight + cropTop + cropBottom,
                   child: Stack(
                     children: [
                       Positioned(
-                        top: -cropTop.toDouble(),
+                        top: -cropTop * viewHeight / visibleHeight,
                         left: 0,
                         child: SizedBox(
-                          width: videoWidth.toDouble(),
-                          height: videoHeight.toDouble(),
+                          width: viewWidth,
+                          height: viewHeight + cropTop + cropBottom,
                           child: VideoPlayer(_controller),
                         ),
                       ),
@@ -125,9 +135,9 @@ class _VideoCropWhiteTopState extends State<VideoCropWhiteTop> {
                 ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        );
+      },
     );
   }
 
@@ -137,9 +147,7 @@ class _VideoCropWhiteTopState extends State<VideoCropWhiteTop> {
       backgroundColor: Colors.black,
       body: GestureDetector(
         onTap: _nextVideo,
-        child: Center(
-          child: _croppedVideo(),
-        ),
+        child: _croppedVideo(context),
       ),
     );
   }
