@@ -25,15 +25,15 @@ class _VideoSegmentPlayerState extends State<VideoSegmentPlayer> {
 
   // 요청하신 9개 구간(초)
   final List<Map<String, double>> segments = [
-    {'start': 0.00,  'end': 3.19},
-    {'start': 3.19,  'end': 7.25},
-    {'start': 7.25,  'end': 8.13},
-    {'start': 9.19,  'end': 9.28},
-    {'start': 11.04, 'end': 11.09},
-    {'start': 12.10, 'end': 12.15},
-    {'start': 13.15, 'end': 13.25},
-    {'start': 15.10, 'end': 15.15},
-    {'start': 16.11, 'end': 26.11},
+    {'start': 0.00,   'end': 3.70},
+    {'start': 3.70,   'end': 8.06},
+    {'start': 8.06,   'end': 8.40},
+    {'start': 9.80,   'end': 9.85},
+    {'start': 11.15,  'end': 11.20},
+    {'start': 12.38,  'end': 12.43},
+    {'start': 13.73,  'end': 13.78},
+    {'start': 15.35,  'end': 15.40},
+    {'start': 16.35,  'end': 26.80},
   ];
 
   late VideoPlayerController _controller;
@@ -73,6 +73,14 @@ class _VideoSegmentPlayerState extends State<VideoSegmentPlayer> {
     }
   }
 
+  // 하단 컬러: 17초(16.35) 이상 구간만 특수색, 나머지는 하얀색
+  Color getBottomOverlayColor() {
+    if (segments[currentSegment]['start']! >= 17.0) {
+      return const Color(0xFFF5F3F6);
+    }
+    return Colors.white;
+  }
+
   @override
   void dispose() {
     _controller.removeListener(_onPositionUpdate);
@@ -98,8 +106,9 @@ class _VideoSegmentPlayerState extends State<VideoSegmentPlayer> {
                     final double showW = constraints.maxWidth;
                     final double showH = showW / aspect;
 
-                    // 상단 오버레이 높이(비율 변환)
+                    // 오버레이 높이(비율 변환)
                     final double topOverlay = showH * 95 / videoH;
+                    final double bottomOverlay = showH * 40 / videoH;
 
                     return Stack(
                       children: [
@@ -114,6 +123,14 @@ class _VideoSegmentPlayerState extends State<VideoSegmentPlayer> {
                           top: 0,
                           height: topOverlay,
                           child: Container(color: Colors.white),
+                        ),
+                        // 하단 오버레이(40px)
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          height: bottomOverlay,
+                          child: Container(color: getBottomOverlayColor()),
                         ),
                       ],
                     );
