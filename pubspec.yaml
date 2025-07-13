@@ -1,5 +1,5 @@
 name: bank_video_app
-description: 은행앱 클론 - 터치마다 영상 넘기기
+description: 은행앱 클론 - 구간별 영상 분할 재생
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -14,23 +14,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
   assets:
-    - assets/app_icon.png
-    - assets/videos/video1.MOV
-    - assets/videos/video2.MOV
-    - assets/videos/video3.MOV
-    - assets/videos/video4.MOV
-    - assets/videos/video5.MOV
-    - assets/videos/video6.MOV
-    - assets/videos/video7.MOV
-    - assets/videos/video8.MOV
-    - assets/videos/video9.MOV
-
-flutter_launcher_icons:
-  android: true
-  ios: true
-  image_path: "assets/app_icon.png"
+    - assets/videos/all.MOV
