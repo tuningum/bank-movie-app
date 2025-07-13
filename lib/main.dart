@@ -9,22 +9,22 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
         debugShowCheckedModeBanner: false,
         title: '우리WON뱅킹',
-        home: const VideoCropWhiteTop(),
+        home: const VideoCropCustomTopColor(),
       );
 }
 
-class VideoCropWhiteTop extends StatefulWidget {
-  const VideoCropWhiteTop({super.key});
+class VideoCropCustomTopColor extends StatefulWidget {
+  const VideoCropCustomTopColor({super.key});
 
   @override
-  State<VideoCropWhiteTop> createState() => _VideoCropWhiteTopState();
+  State<VideoCropCustomTopColor> createState() => _VideoCropCustomTopColorState();
 }
 
-class _VideoCropWhiteTopState extends State<VideoCropWhiteTop> {
+class _VideoCropCustomTopColorState extends State<VideoCropCustomTopColor> {
   final int videoWidth = 1170;
   final int videoHeight = 2532;
-  final int cropTop = 95;    // 상단 95px crop+화이트
-  final int cropBottom = 35; // 하단 35px crop만
+  final int cropTop = 95;     // 상단 95px (색상채움)
+  final int cropBottom = 40;  // 하단 40px (crop)
 
   final List<String> videoList = List.generate(
     9,
@@ -54,11 +54,14 @@ class _VideoCropWhiteTopState extends State<VideoCropWhiteTop> {
     if (currentIndex < videoList.length - 1 && !_isTransitioning) {
       _isTransitioning = true;
       final nextIndex = currentIndex + 1;
+
+      // 다음 영상 미리 초기화 (이전 영상 계속 보여주기)
       _nextController = VideoPlayerController.asset(videoList[nextIndex]);
       await _nextController!.initialize();
       _nextController!.play();
       _nextController!.setLooping(false);
 
+      // 컨트롤러 바꿔치기 (빈화면 없음)
       await _controller.pause();
       await _controller.dispose();
       _controller = _nextController!;
@@ -76,6 +79,10 @@ class _VideoCropWhiteTopState extends State<VideoCropWhiteTop> {
     super.dispose();
   }
 
+  // 상단 배경색 결정 함수
+  Color get topColor =>
+      (currentIndex == 8) ? const Color(0xFFF5F6FA) : Colors.white;
+
   Widget _croppedVideo(BuildContext context) {
     if (!_controller.value.isInitialized) {
       return const Center(child: CircularProgressIndicator());
@@ -83,7 +90,6 @@ class _VideoCropWhiteTopState extends State<VideoCropWhiteTop> {
     final int visibleHeight = videoHeight - cropTop - cropBottom;
     final double croppedAspect = videoWidth / visibleHeight;
 
-    // 화면에 맞춰, 확대 없이 crop된 부분만 비율대로 표시
     return LayoutBuilder(
       builder: (context, constraints) {
         final double maxWidth = constraints.maxWidth;
@@ -101,13 +107,13 @@ class _VideoCropWhiteTopState extends State<VideoCropWhiteTop> {
         }
         return Stack(
           children: [
-            // 상단 패딩(화이트)
+            // 상단 배경
             Positioned(
               top: 0,
               left: 0,
               right: 0,
               height: cropTop * viewHeight / visibleHeight,
-              child: Container(color: Colors.white),
+              child: Container(color: topColor),
             ),
             // crop된 비디오
             Positioned(
